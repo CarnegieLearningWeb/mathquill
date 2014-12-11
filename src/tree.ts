@@ -245,6 +245,46 @@ class NodeBase {
     return false;
   }
 
+  /**
+   * Whether the point (client coordinates) is inside any of this node's DOM
+   * elements. The bounding rect includes padding, so points in the padding
+   * count as inside.
+   */
+  containsPoint(clientX: number, clientY: number) {
+    var contains = false;
+    this.domFrag().eachElement(function (el) {
+      if (contains) return;
+      var rect = getBoundingClientRect(el);
+      var pointInsideLeft = rect.left <= clientX;
+      var pointInsideRight = clientX <= rect.left + rect.width;
+      var pointAboveBottom = rect.top <= clientY;
+      var pointBelowTop = clientY <= rect.top + rect.height;
+      contains =
+        pointInsideLeft &&
+        pointInsideRight &&
+        pointAboveBottom &&
+        pointBelowTop;
+    });
+    return contains;
+  }
+
+  /**
+   * The child containing the point (client coordinates), this node itself if
+   * no child contains it, or undefined if this node doesn't contain it.
+   */
+  childForPoint(clientX: number, clientY: number): MQNode | undefined {
+    if (!this.containsPoint(clientX, clientY)) return undefined;
+    var nodeForPoint: MQNode | undefined;
+    this.eachChild(function (child) {
+      if (child.containsPoint(clientX, clientY)) {
+        nodeForPoint = child;
+        return false;
+      }
+      return undefined;
+    });
+    return nodeForPoint || this.getSelfNode();
+  }
+
   children() {
     return new Fragment(this.getEnd(L), this.getEnd(R));
   }

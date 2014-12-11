@@ -55,6 +55,10 @@ declare namespace MathQuill {
       write: (latex: string) => EditableMathQuill;
       keystroke: (key: string, evt?: KeyboardEvent) => EditableMathQuill;
       typedText: (text: string) => EditableMathQuill;
+      setSelection: (
+        startPoint: v1.PagePoint,
+        endPoint: v1.PagePoint
+      ) => EditableMathQuill;
       clearSelection: () => EditableMathQuill;
       blur: () => EditableMathQuill;
       focus: () => EditableMathQuill;
@@ -153,6 +157,12 @@ declare namespace MathQuill {
     >;
     type HandlerName = keyof HandlerOptions;
 
+    /** A point in the page's coordinate system (like MouseEvent.pageX/pageY) */
+    interface PagePoint {
+      x: number;
+      y: number;
+    }
+
     interface BaseMathQuill<$ = DefaultJquery> {
       id: number;
       data: { [key: string]: any };
@@ -175,6 +185,7 @@ declare namespace MathQuill {
       write: (latex: string) => void;
       keystroke: (key: string, evt?: KeyboardEvent) => void;
       typedText: (text: string) => void;
+      setSelection: (startPoint: PagePoint, endPoint: PagePoint) => void;
       clearSelection: () => void;
       blur: () => void;
       focus: () => void;
