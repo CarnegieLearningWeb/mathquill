@@ -98,6 +98,7 @@ class Options {
   supSubsRequireOperand?: boolean;
   spaceBehavesLikeTab?: boolean | 'exceptRootBlock';
   tabAction?: 'escapeAndOut' | 'escapeAndNextTemplate';
+  strictOperatorSelection?: boolean;
   typingAsteriskWritesTimesSymbol?: boolean;
   typingSlashWritesDivisionSymbol: boolean;
   typingPercentWritesPercentOf?: boolean;

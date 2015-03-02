@@ -18,6 +18,89 @@ class Anticursor extends Point {
   }
 }
 
+/**
+ * Expand a selection so it is mathematically meaningful around unary and
+ * binary operators (strictOperatorSelection): a selected prefix operator
+ * pulls in its right sibling, and a selected binary operator pulls in its
+ * left and right siblings.
+ */
+function adjustSelectionForStrictOperators(
+  leftEnd: MQNode,
+  rightEnd: MQNode
+): { [L]: MQNode; [R]: MQNode } {
+  var isPrefixOp = function (ctrlSeq: string | undefined) {
+    // different dashes can be used for the minus sign
+    return ctrlSeq === '–' || ctrlSeq === '-' || ctrlSeq === '\\pm ';
+  };
+
+  var isBinaryOp = function (ctrlSeq: string | undefined) {
+    return (
+      ctrlSeq === '+' ||
+      ctrlSeq === '\\div ' ||
+      ctrlSeq === '\\cdot ' ||
+      ctrlSeq === '='
+    );
+  };
+
+  var isStrictOp = function (ctrlSeq: string | undefined) {
+    return isPrefixOp(ctrlSeq) || isBinaryOp(ctrlSeq);
+  };
+
+  // returns the element to use for looking for siblings
+  // usually the element itself, but if the element has no siblings and its grandparent is a class or textcolor command, returns the wrapper instead
+  var eltForSiblings = function (elt: MQNode): MQNode {
+    if (elt[L] || elt[R]) return elt;
+    else {
+      var gramp = elt.parent && elt.parent.parent;
+      if (gramp && (gramp.ctrlSeq === 'class' || gramp.ctrlSeq === 'textcolor'))
+        return gramp;
+    }
+
+    return elt;
+  };
+
+  // returns the element to use for figuring out whether this element is an operator
+  // usually the element itself, but if the element is a class or textcolor command wrapping one thing, returns what is being wrapped
+  var eltForOp = function (elt: MQNode): MQNode {
+    if (elt.ctrlSeq === 'class' || elt.ctrlSeq === 'textcolor') {
+      var innerBlock = elt.getEnd(L);
+      if (innerBlock && innerBlock.getEnd(L) === innerBlock.getEnd(R))
+        return (innerBlock.getEnd(L) as MQNode) || elt;
+    }
+    return elt;
+  };
+
+  // grabs a sibling in the specified direction if one exists
+  // otherwise, returns the element itself
+  var grabSib = function (elt: MQNode, dir: Direction): MQNode {
+    return elt[dir] ? (elt[dir] as MQNode) : elt;
+  };
+
+  // selecting just a strict operator
+  if (leftEnd === rightEnd && isStrictOp(leftEnd.ctrlSeq)) {
+    // if we're in a class or textcolor wrapper, set left and right ends up to that level
+    leftEnd = rightEnd = eltForSiblings(leftEnd);
+
+    // if the selected operator is binary, grab the left sib
+    if (isBinaryOp(leftEnd.ctrlSeq)) leftEnd = grabSib(leftEnd, L);
+
+    // grab the right sib
+    rightEnd = grabSib(rightEnd, R);
+  }
+
+  // if the selection's left end is a binary operator, grab its left sib
+  if (isBinaryOp(eltForOp(leftEnd).ctrlSeq)) leftEnd = grabSib(leftEnd, L);
+
+  // if the left sib of the selection's left end is a prefix operator, grab it
+  if (isPrefixOp(eltForOp(grabSib(leftEnd, L)).ctrlSeq))
+    leftEnd = grabSib(leftEnd, L);
+
+  // if the selection's right end is an op, grab its right sib
+  if (isStrictOp(eltForOp(rightEnd).ctrlSeq)) rightEnd = grabSib(rightEnd, R);
+
+  return { [L]: leftEnd, [R]: rightEnd };
+}
+
 class Cursor extends Point {
   parent: MQNode;
   /** Slightly more than just a "cache", this remembers the cursor's position in each block node, so that we can return to the right
@@ -312,6 +395,18 @@ class Cursor extends Point {
     // only want to select Nodes up to Points, can't select Points themselves
     if (leftEnd instanceof Point) leftEnd = leftEnd[R];
     if (rightEnd instanceof Point) rightEnd = rightEnd[L];
+
+    // adjust selections to be mathematically meaningful
+    // options can be undefined (e.g. a Cursor created without options), so
+    // guard against it (safeguard from commit 44a7562a)
+    if (this.options && this.options.strictOperatorSelection) {
+      const strictEnds = adjustSelectionForStrictOperators(
+        leftEnd as MQNode,
+        rightEnd as MQNode
+      );
+      leftEnd = strictEnds[L];
+      rightEnd = strictEnds[R];
+    }
 
     this.hide().selection = lca.selectChildren(
       leftEnd as MQNode,
