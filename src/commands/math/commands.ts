@@ -1394,6 +1394,15 @@ class Bracket extends DelimsNode {
     // if something typed between ghost and far
     if (dir === -this.side) this.finalizeTree(); // end of its block, solidify
   }
+  // Ease selection of the contents of delimiters: when seeking onto the
+  // bracket (including the delimiters themselves), place the cursor inside
+  // the content block rather than outside the brackets. Seeking to the left
+  // or right of the whole bracket is handled by the parent block, so the
+  // whole bracket command can still be selected from outside.
+  seek(clientX: number, cursor: Cursor) {
+    this.getEnd(L).seek(clientX, cursor);
+    return undefined;
+  }
 }
 
 function getOppBracketSide(bracket: Bracket) {
