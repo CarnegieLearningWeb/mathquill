@@ -536,8 +536,13 @@ class MathBlock extends MathElement {
   ariaLabel = 'block';
 
   keystroke(key: string, e: KeyboardEvent | undefined, ctrlr: Controller) {
+    const spaceBehavesLikeTab = ctrlr.options.spaceBehavesLikeTab;
     if (
-      ctrlr.options.spaceBehavesLikeTab &&
+      (spaceBehavesLikeTab === 'exceptRootBlock'
+        ? // like true, except in the root block, where space inserts a space
+          // (e.g. to allow typing mixed fractions)
+          this !== ctrlr.root
+        : spaceBehavesLikeTab) &&
       (key === 'Spacebar' || key === 'Shift-Spacebar')
     ) {
       e?.preventDefault();

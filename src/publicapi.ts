@@ -96,7 +96,7 @@ class Options {
   sumStartsWithNEquals?: boolean;
   autoSubscriptNumerals?: boolean;
   supSubsRequireOperand?: boolean;
-  spaceBehavesLikeTab?: boolean;
+  spaceBehavesLikeTab?: boolean | 'exceptRootBlock';
   typingAsteriskWritesTimesSymbol?: boolean;
   typingSlashWritesDivisionSymbol: boolean;
   typingPercentWritesPercentOf?: boolean;
