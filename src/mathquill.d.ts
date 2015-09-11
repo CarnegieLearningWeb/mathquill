@@ -114,7 +114,7 @@ declare namespace MathQuill {
       supSubsRequireOperand?: boolean;
       spaceBehavesLikeTab?: boolean | 'exceptRootBlock';
       tabAction?: 'escapeAndOut' | 'escapeAndNextTemplate';
-      strictOperatorSelection?: boolean;
+      strictOperatorSelection?: StrictOperatorSelection;
       typingAsteriskWritesTimesSymbol?: boolean;
       typingSlashWritesDivisionSymbol?: boolean;
       typingPercentWritesPercentOf?: boolean;
@@ -158,6 +158,15 @@ declare namespace MathQuill {
       }
     >;
     type HandlerName = keyof HandlerOptions;
+
+    /**
+     * Control sequences of operators to select together with their operands,
+     * e.g. { prefixOperators: ['-', '\\pm '], binaryOperators: ['+', '='] }
+     */
+    interface StrictOperatorSelection {
+      prefixOperators?: string[];
+      binaryOperators?: string[];
+    }
 
     /** A point in the page's coordinate system (like MouseEvent.pageX/pageY) */
     interface PagePoint {

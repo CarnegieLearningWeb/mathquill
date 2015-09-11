@@ -19,26 +19,29 @@ class Anticursor extends Point {
 }
 
 /**
- * Expand a selection so it is mathematically meaningful around unary and
- * binary operators (strictOperatorSelection): a selected prefix operator
- * pulls in its right sibling, and a selected binary operator pulls in its
- * left and right siblings.
+ * Expand a selection so it is mathematically meaningful around the prefix
+ * and binary operators listed in the strictOperatorSelection config: a
+ * selected prefix operator pulls in its right sibling, and a selected binary
+ * operator pulls in its left and right siblings.
  */
 function adjustSelectionForStrictOperators(
+  strictOperators: MathQuill.v1.StrictOperatorSelection,
   leftEnd: MQNode,
   rightEnd: MQNode
 ): { [L]: MQNode; [R]: MQNode } {
   var isPrefixOp = function (ctrlSeq: string | undefined) {
-    // different dashes can be used for the minus sign
-    return ctrlSeq === '–' || ctrlSeq === '-' || ctrlSeq === '\\pm ';
+    return (
+      !!strictOperators.prefixOperators &&
+      ctrlSeq !== undefined &&
+      strictOperators.prefixOperators.indexOf(ctrlSeq) > -1
+    );
   };
 
   var isBinaryOp = function (ctrlSeq: string | undefined) {
     return (
-      ctrlSeq === '+' ||
-      ctrlSeq === '\\div ' ||
-      ctrlSeq === '\\cdot ' ||
-      ctrlSeq === '='
+      !!strictOperators.binaryOperators &&
+      ctrlSeq !== undefined &&
+      strictOperators.binaryOperators.indexOf(ctrlSeq) > -1
     );
   };
 
@@ -396,11 +399,13 @@ class Cursor extends Point {
     if (leftEnd instanceof Point) leftEnd = leftEnd[R];
     if (rightEnd instanceof Point) rightEnd = rightEnd[L];
 
-    // adjust selections to be mathematically meaningful
+    // adjust selections for strict operators
     // options can be undefined (e.g. a Cursor created without options), so
     // guard against it (safeguard from commit 44a7562a)
-    if (this.options && this.options.strictOperatorSelection) {
+    var strictOperators = this.options && this.options.strictOperatorSelection;
+    if (strictOperators) {
       const strictEnds = adjustSelectionForStrictOperators(
+        strictOperators,
         leftEnd as MQNode,
         rightEnd as MQNode
       );

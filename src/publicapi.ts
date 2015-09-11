@@ -98,7 +98,7 @@ class Options {
   supSubsRequireOperand?: boolean;
   spaceBehavesLikeTab?: boolean | 'exceptRootBlock';
   tabAction?: 'escapeAndOut' | 'escapeAndNextTemplate';
-  strictOperatorSelection?: boolean;
+  strictOperatorSelection?: MathQuill.v1.StrictOperatorSelection;
   typingAsteriskWritesTimesSymbol?: boolean;
   typingSlashWritesDivisionSymbol: boolean;
   typingPercentWritesPercentOf?: boolean;
