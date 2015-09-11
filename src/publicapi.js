@@ -106,8 +106,8 @@ var AbstractMathQuill = P(function(_) {
 MathQuill.prototype = AbstractMathQuill.prototype;
 
 MathQuill.StaticMath = APIFnFor(P(AbstractMathQuill, function(_, super_) {
-  _.init = function(el) {
-    this.initRoot(MathBlock(), el.addClass('mq-math-mode'));
+  _.init = function(el, opts) {
+    this.initRoot(MathBlock(), el.addClass('mq-math-mode'), opts);
     this.__controller.delegateMouseEvents();
     this.__controller.staticMathTextareaEvents();
   };

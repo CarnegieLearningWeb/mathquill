@@ -223,6 +223,74 @@ var Cursor = P(Point, function(_) {
     if (leftEnd instanceof Point) leftEnd = leftEnd[R];
     if (rightEnd instanceof Point) rightEnd = rightEnd[L];
 
+		// adjust selections to be mathematically meaningful
+    // TODO: should this be moved to a separate method elsewhere?
+    if (this.options.strictOperatorSelection) {
+      var isTaggedOp = function(ctrlSeq) {
+        // different dashes can be used for the minus sign
+        return ctrlSeq === '–' || ctrlSeq === '-' || ctrlSeq === '\\pm ';
+      };
+
+      var isUntaggedOp = function(ctrlSeq) {
+        return ctrlSeq === '+' || ctrlSeq === '\\div ' || ctrlSeq === '\\cdot ';
+      };
+
+      var isOp = function(ctrlSeq) {
+        return isTaggedOp(ctrlSeq) || isUntaggedOp(ctrlSeq);
+      };
+
+      // returns the element to use for looking for siblings
+      // usually the element itself, but if the element has no siblings and its grandparent is a class or textcolor command, returns the wrapper instead
+      var eltForSiblings = function(elt) {
+        if (elt[L] || elt[R]) return elt
+        else {
+          var gramp = elt.parent.parent;
+          if (gramp && (gramp.ctrlSeq === 'class' || gramp.ctrlSeq === 'textcolor')) return gramp;
+        }
+
+        return elt;
+      };
+
+      // returns the element to use for figuring out whether this element is an operator
+      // usually the element itself, but if the element is a class or textcolor command wrapping one thing, returns what is being wrapped
+      var eltForOp = function(elt) {
+        if (elt.ctrlSeq === 'class' || elt.ctrlSeq === 'textcolor') {
+          var innerBlock = elt.blocks[0];
+          if (innerBlock.ends[L] === innerBlock.ends[R]) return innerBlock.ends[L];
+        }
+        return elt;
+      };
+
+      // grabs a sibling in the specified direction if one exists
+      // otherwise, returns the element itself
+      var grabSib = function(elt, dir) {
+        return elt[dir] ? elt[dir] : elt;
+      };
+
+      // index selection on an operator
+      if (leftEnd === rightEnd && isOp(leftEnd.ctrlSeq)) {
+        var untagged = isUntaggedOp(leftEnd.ctrlSeq);
+
+        // if we're in a class or textcolor wrapper, jump left and right ends up to that level
+        leftEnd = rightEnd = eltForSiblings(leftEnd);
+
+        // if the index is untagged, grab the left sib
+        if (untagged) leftEnd = grabSib(leftEnd, L);
+
+        // grab the right sib
+        rightEnd = grabSib(rightEnd, R);
+      }
+
+      // if the left end is untagged, grab its left sib
+      if (isUntaggedOp(eltForOp(leftEnd).ctrlSeq)) leftEnd = grabSib(leftEnd, L);
+
+      // if the left sib of the left end is tagged, grab it
+      if (isTaggedOp(eltForOp(grabSib(leftEnd, L)).ctrlSeq)) leftEnd = grabSib(leftEnd, L);
+
+      // if the right end is an op, grab its right sib
+      if (isOp(eltForOp(rightEnd).ctrlSeq)) rightEnd = grabSib(rightEnd, R);
+    }
+
     this.hide().selection = lca.selectChildren(leftEnd, rightEnd);
     this.insDirOf(dir, this.selection.ends[dir]);
     this.selectionChanged();
