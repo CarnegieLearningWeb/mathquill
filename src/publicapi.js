@@ -92,12 +92,22 @@ var AbstractMathQuill = P(function(_) {
     this.__controller.root.postOrder('reflow');
     return this;
   };
+  _.setSelection = function(pointA, pointB) {
+    var pointANode = this.__controller.root.childForPoint(pointA.x, pointA.y) || this.__controller.root;
+    var pointBNode = this.__controller.root.childForPoint(pointB.x, pointB.y) || this.__controller.root;
+    this.__controller.seek(pointANode.jQ, pointA.x, pointA.y).cursor.startSelection();
+    this.__controller.seek(pointBNode.jQ, pointB.x, pointB.y).cursor.select();
+  };
+  _.clearSelection = function() {
+    this.__controller.cursor.clearSelection();
+    return this;
+  };
 });
 MathQuill.prototype = AbstractMathQuill.prototype;
 
 MathQuill.StaticMath = APIFnFor(P(AbstractMathQuill, function(_, super_) {
-  _.init = function(el) {
-    this.initRoot(MathBlock(), el.addClass('mq-math-mode'));
+  _.init = function(el, opts) {
+    this.initRoot(MathBlock(), el.addClass('mq-math-mode'), opts);
     this.__controller.delegateMouseEvents();
     this.__controller.staticMathTextareaEvents();
   };

@@ -101,6 +101,9 @@ MathQuill API objects further expose the following public methods:
 * `.html()` returns the contents as static HTML
 * `.latex()` returns the contents as LaTeX
 * `.latex('a_n x^n')` will render the argument as LaTeX
+* `.setSelection({x: 50, y: 50}, {x:100, y:100})` will set the seleciton to start
+  at the first page position and end at the second page position
+* `.clearSelection()` clears the current selection
 
 Additionally, descendants of `MathQuill.EditableField` (currently only
 `MathQuill.MathField`) expose:
@@ -110,7 +113,6 @@ Additionally, descendants of `MathQuill.EditableField` (currently only
   with the current selection
 * `.select()` selects the contents (just like [on `textarea`s][] and [on
   `input`s][])
-* `.clearSelection()` clears the current selection
 * `.moveTo{Left,Right,Dir}End()` move the cursor to the left/right end of the
   editable field, respectively. (The first two are implemented in terms of
   `.moveToDirEnd(dir)` where `dir` is one of `MathQuill.L` or `MathQuill.R`,
@@ -156,6 +158,10 @@ var mathField = MathQuill.MathField(el[0], {
   autoOperatorNames: 'sin cos etc',
   substituteTextarea: function() {
     return document.createElement('textarea');
+  },
+  strictOperatorSelection: {
+    prefixOperators: [‘-‘, ‘\\pm ‘],
+    binaryOperators: [‘+’, ‘=‘]
   },
   handlers: {
     reflow: function(mathField) { ... },
@@ -247,6 +253,14 @@ keyboards just don't work in Desmos on iOS, the tradeoffs are up to you.
 [StackOverflow]: http://stackoverflow.com/q/2593139/362030
 [stucox]: http://www.stucox.com/blog/you-cant-detect-a-touchscreen/
 [Modernizr]: https://github.com/Modernizr/Modernizr/issues/548
+
+`strictOperatorSelection`, allows a user specify operators that they want to bind to
+their operands during selection. When making a cursor selection, a selected prefix
+operator will include its right sibling in the selection, and a selected binary
+operator will include its left and right siblings in the selection. This approach to
+selection can enforce an idea of "mathematically meaningful selection," that is, that
+operators should include their operands in a selection so the selection includes a 
+representation of their role in the mathematical context.
 
 Supported handlers:
 - `moveOutOf`, `deleteOutOf`, and `selectOutOf` are called with `dir` and the

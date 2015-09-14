@@ -52,6 +52,9 @@ var MathCommand = P(MathElement, function(_, super_) {
       return isEmpty && child.isEmpty();
     });
   };
+  _.isStyleBlock = function() {
+    return false;
+  };
 
   _.parser = function() {
     var block = latexMathParser.block;
@@ -132,6 +135,10 @@ var MathCommand = P(MathElement, function(_, super_) {
     var cmd = this;
     var cmdBounds = getBounds(cmd);
 
+    if (cmd.delimjQs) {
+      var contentId = cmd.contentjQ[0].attributes[mqBlockId] || cmd.contentjQ[0].attributes[mqCmdId];
+      if (contentId) return Node.byId[contentId.value].seek(pageX, cursor);
+    }
     if (pageX < cmdBounds[L]) return cursor.insLeftOf(cmd);
     if (pageX > cmdBounds[R]) return cursor.insRightOf(cmd);
 
