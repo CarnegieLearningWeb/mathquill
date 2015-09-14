@@ -326,6 +326,36 @@ var Node = P(function(_) {
     for (var i = 0; i < jQ.length; i += 1) jQadd(jQ[i]);
     return jQ;
   };
+  
+  _.containsPoint = function(x, y) {
+      var rect = {
+        x: this.jQ.offset().left,
+        y: this.jQ.offset().top,
+        width: this.jQ.innerWidth(),
+        height: this.jQ.innerHeight()
+      };
+
+      var pointInsideLeft = rect.x <= x;
+      var pointInsideRight = x <= rect.x + rect.width;
+      var pointAboveBottom = rect.y <= y;
+      var pointBelowTop = y <= rect.y + rect.height;
+
+      return pointInsideLeft && pointInsideRight && pointAboveBottom && pointBelowTop;  
+  };
+  
+  _.childForPoint = function(x, y) {
+    var nodeForPoint;
+    if (this.containsPoint(x, y)) {
+      this.eachChild(function() {
+        nodeForPoint = this.containsPoint(x, y);
+        if (nodeForPoint) {
+          return false;
+        }
+      });
+      nodeForPoint = nodeForPoint || this;
+    }
+    return nodeForPoint;
+  };
 
   _.createDir = function(dir, cursor) {
     prayDirection(dir);
@@ -799,6 +829,73 @@ var Cursor = P(Point, function(_) {
     if (leftEnd instanceof Point) leftEnd = leftEnd[R];
     if (rightEnd instanceof Point) rightEnd = rightEnd[L];
 
+		// adjust selections for strict operators
+		var strictOperators = this.options.strictOperatorSelection;
+    if (strictOperators !== undefined) {
+      var isPrefixOp = function(ctrlSeq) {
+        return strictOperators.prefixOperators &&
+          strictOperators.prefixOperators.indexOf(ctrlSeq) > -1;
+      };
+
+      var isBinaryOp = function(ctrlSeq) {
+        return strictOperators.binaryOperators &&
+          strictOperators.binaryOperators.indexOf(ctrlSeq) > -1;
+      };
+
+      var isStrictOp = function(ctrlSeq) {
+        return isPrefixOp(ctrlSeq) || isBinaryOp(ctrlSeq);
+      };
+
+      // returns the element to use for looking for siblings
+      // usually the element itself, but if the element has no siblings and its grandparent is a class or textcolor command, returns the wrapper instead
+      var eltForSiblings = function(elt) {
+        if (elt[L] || elt[R]) return elt
+        else {
+          var gramp = elt.parent.parent;
+          if (gramp && gramp.isStyleBlock()) return gramp;
+        }
+
+        return elt;
+      };
+
+      // returns the element to use for figuring out whether this element is an operator
+      // usually the element itself, but if the element is a class or textcolor command wrapping one thing, returns what is being wrapped
+      var eltForOp = function(elt) {
+        if (elt.isStyleBlock()) {
+          var innerBlock = elt.blocks[0];
+          if (innerBlock.ends[L] === innerBlock.ends[R]) return innerBlock.ends[L];
+        }
+        return elt;
+      };
+
+      // grabs a sibling in the specified direction if one exists
+      // otherwise, returns the element itself
+      var grabSib = function(elt, dir) {
+        return elt[dir] ? elt[dir] : elt;
+      };
+
+      // selecting just a strict operator
+      if (leftEnd === rightEnd && isStrictOp(leftEnd.ctrlSeq)) {
+        // if we're in a class or textcolor wrapper, set left and right ends up to that level
+        leftEnd = rightEnd = eltForSiblings(leftEnd);
+
+        // if the selected operator is binary, grab the left sib
+        if (isBinaryOp(leftEnd.ctrlSeq)) leftEnd = grabSib(leftEnd, L);
+
+        // grab the right sib
+        rightEnd = grabSib(rightEnd, R);
+      }
+
+      // if the selection's left end is a binary operator, grab its left sib
+      if (isBinaryOp(eltForOp(leftEnd).ctrlSeq)) leftEnd = grabSib(leftEnd, L);
+
+      // if the left sib of the selection's left end is a prefix operator, grab it
+      if (isPrefixOp(eltForOp(grabSib(leftEnd, L)).ctrlSeq)) leftEnd = grabSib(leftEnd, L);
+
+      // if the selection's right end is an op, grab its right sib
+      if (isStrictOp(eltForOp(rightEnd).ctrlSeq)) rightEnd = grabSib(rightEnd, R);
+    }
+
     this.hide().selection = lca.selectChildren(leftEnd, rightEnd);
     this.insDirOf(dir, this.selection.ends[dir]);
     this.selectionChanged();
@@ -986,12 +1083,22 @@ var AbstractMathQuill = P(function(_) {
     this.__controller.root.postOrder('reflow');
     return this;
   };
+  _.setSelection = function(pointA, pointB) {
+    var pointANode = this.__controller.root.childForPoint(pointA.x, pointA.y) || this.__controller.root;
+    var pointBNode = this.__controller.root.childForPoint(pointB.x, pointB.y) || this.__controller.root;
+    this.__controller.seek(pointANode.jQ, pointA.x, pointA.y).cursor.startSelection();
+    this.__controller.seek(pointBNode.jQ, pointB.x, pointB.y).cursor.select();
+  };
+  _.clearSelection = function() {
+    this.__controller.cursor.clearSelection();
+    return this;
+  };
 });
 MathQuill.prototype = AbstractMathQuill.prototype;
 
 MathQuill.StaticMath = APIFnFor(P(AbstractMathQuill, function(_, super_) {
-  _.init = function(el) {
-    this.initRoot(MathBlock(), el.addClass('mq-math-mode'));
+  _.init = function(el, opts) {
+    this.initRoot(MathBlock(), el.addClass('mq-math-mode'), opts);
     this.__controller.delegateMouseEvents();
     this.__controller.staticMathTextareaEvents();
   };
@@ -2363,6 +2470,9 @@ var MathCommand = P(MathElement, function(_, super_) {
       return isEmpty && child.isEmpty();
     });
   };
+  _.isStyleBlock = function() {
+    return false;
+  };
 
   _.parser = function() {
     var block = latexMathParser.block;
@@ -2443,6 +2553,10 @@ var MathCommand = P(MathElement, function(_, super_) {
     var cmd = this;
     var cmdBounds = getBounds(cmd);
 
+    if (cmd.delimjQs) {
+      var contentId = cmd.contentjQ[0].attributes[mqBlockId] || cmd.contentjQ[0].attributes[mqCmdId];
+      if (contentId) return Node.byId[contentId.value].seek(pageX, cursor);
+    }
     if (pageX < cmdBounds[L]) return cursor.insLeftOf(cmd);
     if (pageX > cmdBounds[R]) return cursor.insRightOf(cmd);
 
@@ -4120,6 +4234,9 @@ var TextColor = LatexCmds.textcolor = P(MathCommand, function(_, super_) {
       })
     ;
   };
+  _.isStyleBlock = function() {
+    return true;
+  };
 });
 
 // Very similar to the \textcolor command, but will add the given CSS class.
@@ -4138,6 +4255,9 @@ var Class = LatexCmds['class'] = P(MathCommand, function(_, super_) {
         return super_.parser.call(self);
       })
     ;
+  };
+  _.isStyleBlock = function() {
+    return true;
   };
 });
 
