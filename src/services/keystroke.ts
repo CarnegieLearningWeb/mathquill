@@ -259,16 +259,39 @@ class Controller_keystroke extends Controller_focusBlur {
     this.cursor.parent.keystroke(key, evt, this.getControllerSelf());
   }
 
-  escapeDir(dir: Direction, _key: string, e?: KeyboardEvent) {
+  escapeDir(dir: Direction, key: string, e?: KeyboardEvent) {
     prayDirection(dir);
     var cursor = this.cursor;
 
-    // only prevent default of Tab if not in the root editable
-    if (cursor.parent !== this.root) e?.preventDefault();
-
     // want to be a noop if in the root editable (in fact, Tab has an unrelated
     // default browser action if so)
-    if (cursor.parent === this.root) return;
+    if (cursor.parent === this.root) {
+      // with tabAction 'escapeAndNextTemplate', {Shift-,}Tab in the root
+      // block moves into the next template in that direction, if any
+      if (
+        (key === 'Tab' || key === 'Shift-Tab') &&
+        cursor.options.tabAction === 'escapeAndNextTemplate'
+      ) {
+        for (var n = cursor[dir]; n; n = n[dir]) {
+          if (!n.isEmpty()) {
+            // only prevent default of Tab if not continuing in MQ field
+            e?.preventDefault();
+
+            cursor.clearSelection();
+            // not empty, so it has a block at that end
+            const block = n.getEnd(-dir as Direction) as MQNode;
+            cursor.insAtDirEnd(-dir as Direction, block);
+            cursor.controller.aria.alert();
+            return this.notify('move');
+          }
+        }
+      }
+
+      return;
+    }
+
+    // only prevent default of Tab if not continuing in MQ field
+    e?.preventDefault();
 
     cursor.clearSelection();
     cursor.parent.moveOutOf(dir, cursor);

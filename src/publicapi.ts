@@ -97,6 +97,7 @@ class Options {
   autoSubscriptNumerals?: boolean;
   supSubsRequireOperand?: boolean;
   spaceBehavesLikeTab?: boolean | 'exceptRootBlock';
+  tabAction?: 'escapeAndOut' | 'escapeAndNextTemplate';
   typingAsteriskWritesTimesSymbol?: boolean;
   typingSlashWritesDivisionSymbol: boolean;
   typingPercentWritesPercentOf?: boolean;

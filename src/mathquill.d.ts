@@ -113,6 +113,7 @@ declare namespace MathQuill {
       autoSubscriptNumerals?: boolean;
       supSubsRequireOperand?: boolean;
       spaceBehavesLikeTab?: boolean | 'exceptRootBlock';
+      tabAction?: 'escapeAndOut' | 'escapeAndNextTemplate';
       typingAsteriskWritesTimesSymbol?: boolean;
       typingSlashWritesDivisionSymbol?: boolean;
       typingPercentWritesPercentOf?: boolean;
