@@ -1,5 +1,5 @@
 suite('Cursor::select()', function() {
-  var cursor = Cursor();
+  var cursor = Cursor(0, {});
   cursor.selectionChanged = noop;
 
   function assertSelection(A, B, leftEnd, rightEnd) {
