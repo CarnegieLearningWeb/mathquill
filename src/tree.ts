@@ -269,17 +269,16 @@ class NodeBase {
   }
 
   /**
-   * The child containing the point (client coordinates), this node itself if
-   * no child contains it, or undefined if this node doesn't contain it.
+   * The lowest descendant containing the point (client coordinates), this
+   * node itself if no child contains it, or undefined if this node doesn't
+   * contain it.
    */
   childForPoint(clientX: number, clientY: number): MQNode | undefined {
     if (!this.containsPoint(clientX, clientY)) return undefined;
     var nodeForPoint: MQNode | undefined;
     this.eachChild(function (child) {
-      if (child.containsPoint(clientX, clientY)) {
-        nodeForPoint = child;
-        return false;
-      }
+      nodeForPoint = child.childForPoint(clientX, clientY);
+      if (nodeForPoint) return false;
       return undefined;
     });
     return nodeForPoint || this.getSelfNode();
