@@ -347,7 +347,7 @@ var Node = P(function(_) {
     var nodeForPoint;
     if (this.containsPoint(x, y)) {
       this.eachChild(function() {
-        nodeForPoint = this.containsPoint(x, y);
+        nodeForPoint = this.childForPoint(x, y);
         if (nodeForPoint) {
           return false;
         }
@@ -391,6 +391,10 @@ var Node = P(function(_) {
 
   _.isEmpty = function() {
     return this.ends[L] === 0 && this.ends[R] === 0;
+  };
+  
+  _.isStyleBlock = function() {
+    return false;
   };
 
   _.children = function() {
@@ -1174,10 +1178,15 @@ var EditableField = MathQuill.EditableField = P(AbstractMathQuill, function(_) {
 });
 
 function RootBlockMixin(_) {
-  var names = 'moveOutOf deleteOutOf selectOutOf upOutOf downOutOf reflow'.split(' ');
+  var names = 'moveOutOf deleteOutOf selectOutOf upOutOf downOutOf'.split(' ');
   for (var i = 0; i < names.length; i += 1) (function(name) {
     _[name] = function(dir) { this.controller.handle(name, dir); };
   }(names[i]));
+  _.reflow = function() {
+    this.controller.handle('reflow');
+    this.controller.handle('edited');
+    this.controller.handle('edit');
+  };
 }
 
 /**
@@ -2504,9 +2513,6 @@ var MathCommand = P(MathElement, function(_, super_) {
       return isEmpty && child.isEmpty();
     });
   };
-  _.isStyleBlock = function() {
-    return false;
-  };
 
   _.parser = function() {
     var block = latexMathParser.block;
@@ -2564,7 +2570,7 @@ var MathCommand = P(MathElement, function(_, super_) {
   };
   _.deleteTowards = function(dir, cursor) {
     if (this.isEmpty()) cursor[dir] = this.remove()[dir];
-    else cursor.insAtDirEnd(-dir, this.ends[-dir]);
+    else this.moveTowards(dir, cursor, null);
   };
   _.selectTowards = function(dir, cursor) {
     cursor[-dir] = this;
