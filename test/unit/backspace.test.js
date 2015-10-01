@@ -197,6 +197,17 @@ suite('backspace', function() {
     assert.equal(mq.latex(),'n=1');
   });
 
+  test('backspace into text block', function() {
+    mq.latex('\\text{x}');
+
+    mq.keystroke('Backspace');
+
+    var textBlock = rootBlock.ends[R];
+    assert.equal(cursor.parent, textBlock, 'cursor is in text block');
+    assert.equal(cursor[R], 0, 'cursor is at the end of text block');
+    assert.equal(cursor[L].text, 'x', 'cursor is rightward of the x');
+  });
+
   suite('empties', function() {
     test('backspace empty exponent', function() {
       mq.latex('x^{}');

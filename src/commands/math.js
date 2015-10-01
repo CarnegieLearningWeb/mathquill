@@ -52,9 +52,6 @@ var MathCommand = P(MathElement, function(_, super_) {
       return isEmpty && child.isEmpty();
     });
   };
-  _.isStyleBlock = function() {
-    return false;
-  };
 
   _.parser = function() {
     var block = latexMathParser.block;
@@ -112,7 +109,7 @@ var MathCommand = P(MathElement, function(_, super_) {
   };
   _.deleteTowards = function(dir, cursor) {
     if (this.isEmpty()) cursor[dir] = this.remove()[dir];
-    else cursor.insAtDirEnd(-dir, this.ends[-dir]);
+    else this.moveTowards(dir, cursor, null);
   };
   _.selectTowards = function(dir, cursor) {
     cursor[-dir] = this;

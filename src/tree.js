@@ -141,7 +141,7 @@ var Node = P(function(_) {
     var nodeForPoint;
     if (this.containsPoint(x, y)) {
       this.eachChild(function() {
-        nodeForPoint = this.containsPoint(x, y);
+        nodeForPoint = this.childForPoint(x, y);
         if (nodeForPoint) {
           return false;
         }
@@ -185,6 +185,10 @@ var Node = P(function(_) {
 
   _.isEmpty = function() {
     return this.ends[L] === 0 && this.ends[R] === 0;
+  };
+  
+  _.isStyleBlock = function() {
+    return false;
   };
 
   _.children = function() {
