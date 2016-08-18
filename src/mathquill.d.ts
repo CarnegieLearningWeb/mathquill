@@ -32,6 +32,11 @@ declare namespace MathQuill {
       html: () => string;
       mathspeak: () => string;
       text(): string;
+      setSelection(
+        startPoint: v1.PagePoint,
+        endPoint: v1.PagePoint
+      ): BaseMathQuill;
+      clearSelection(): BaseMathQuill;
     }
 
     interface EditableMathQuill {
@@ -187,6 +192,8 @@ declare namespace MathQuill {
       html: () => string;
       mathspeak: () => string;
       text(): string;
+      setSelection: (startPoint: PagePoint, endPoint: PagePoint) => void;
+      clearSelection: () => void;
     }
 
     interface EditableMathQuill extends BaseMathQuill {
@@ -196,8 +203,6 @@ declare namespace MathQuill {
       write: (latex: string) => void;
       keystroke: (key: string, evt?: KeyboardEvent) => void;
       typedText: (text: string) => void;
-      setSelection: (startPoint: PagePoint, endPoint: PagePoint) => void;
-      clearSelection: () => void;
       blur: () => void;
       focus: () => void;
       getAriaPostLabel: () => string;

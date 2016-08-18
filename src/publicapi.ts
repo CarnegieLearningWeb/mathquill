@@ -342,6 +342,36 @@ function getInterface(v: number): MathQuill.v3.API | MathQuill.v1.API {
       });
       return this;
     }
+    /**
+     * Select the contents between two points in the page's coordinate system
+     * (like MouseEvent.pageX/pageY), simulating a mouse selection.
+     */
+    setSelection(
+      pointA: MathQuill.v1.PagePoint,
+      pointB: MathQuill.v1.PagePoint
+    ) {
+      var ctrlr = this.__controller;
+      var root = ctrlr.root;
+      var rootElement = root.domFrag().oneElement();
+      var scrollX = getScrollX();
+      var scrollY = getScrollY();
+      var targetForPoint = function (clientX: number, clientY: number) {
+        var node = root.childForPoint(clientX, clientY) || root;
+        return node.domFrag().firstElement() || rootElement;
+      };
+
+      var aX = pointA.x - scrollX,
+        aY = pointA.y - scrollY;
+      var bX = pointB.x - scrollX,
+        bY = pointB.y - scrollY;
+      ctrlr.seek(targetForPoint(aX, aY), aX, aY).cursor.startSelection();
+      ctrlr.seek(targetForPoint(bX, bY), bX, bY).cursor.select();
+      return this;
+    }
+    clearSelection() {
+      this.__controller.cursor.clearSelection();
+      return this;
+    }
   }
 
   abstract class EditableField
@@ -405,36 +435,6 @@ function getInterface(v: number): MathQuill.v3.API | MathQuill.v1.API {
     }
     select() {
       this.__controller.selectAll();
-      return this;
-    }
-    /**
-     * Select the contents between two points in the page's coordinate system
-     * (like MouseEvent.pageX/pageY), simulating a mouse selection.
-     */
-    setSelection(
-      pointA: MathQuill.v1.PagePoint,
-      pointB: MathQuill.v1.PagePoint
-    ) {
-      var ctrlr = this.__controller;
-      var root = ctrlr.root;
-      var rootElement = root.domFrag().oneElement();
-      var scrollX = getScrollX();
-      var scrollY = getScrollY();
-      var targetForPoint = function (clientX: number, clientY: number) {
-        var node = root.childForPoint(clientX, clientY) || root;
-        return node.domFrag().firstElement() || rootElement;
-      };
-
-      var aX = pointA.x - scrollX,
-        aY = pointA.y - scrollY;
-      var bX = pointB.x - scrollX,
-        bY = pointB.y - scrollY;
-      ctrlr.seek(targetForPoint(aX, aY), aX, aY).cursor.startSelection();
-      ctrlr.seek(targetForPoint(bX, bY), bX, bY).cursor.select();
-      return this;
-    }
-    clearSelection() {
-      this.__controller.cursor.clearSelection();
       return this;
     }
 
