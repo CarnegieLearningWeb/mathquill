@@ -85,6 +85,7 @@ Node.open(function(_) {
       break;
 
     case 'Left': ctrlr.moveLeft(); break;
+    case 'Enter':  ctrlr.handle('enter'); break; // need this to Handle 'Enter' Event in handler
     case 'Shift-Left': ctrlr.selectLeft(); break;
     case 'Ctrl-Left': break;
 
