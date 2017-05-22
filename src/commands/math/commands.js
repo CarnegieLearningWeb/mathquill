@@ -739,10 +739,21 @@ var InnerMathField = P(MathQuill.MathField, function(_) {
     this.__options = Options();
     this.config(options);
     var ctrlr = Controller(this, root, container);
-    ctrlr.editable = true;
-    ctrlr.createTextarea();
-    ctrlr.editablesTextareaEvents();
-    ctrlr.cursor.insAtRightEnd(root);
+    this.makeStatic = function() {
+      ctrlr.editable = false;
+      root.blur();
+      ctrlr.unbindEditablesEvents();
+      container.removeClass('mq-editable-field mq-focused').addClass('mq-editable-field-static');
+    };
+    this.makeEditable = function() {
+      ctrlr.editable = true;
+      ctrlr.createTextarea();
+      ctrlr.editablesTextareaEvents();
+      ctrlr.cursor.insAtRightEnd(root);
+      container.addClass('mq-editable-field');
+    };
+
+    this.makeEditable();
   };
 });
 LatexCmds.MathQuillMathField = P(MathCommand, function(_, super_) {
