@@ -1,3 +1,24 @@
+/**
+ * Carnegie: read and write the text of the element MathQuill listens to for
+ * typing. That's usually a <textarea>, but `substituteTextarea` can return any
+ * element, e.g. a custom element whose `value` the app sets from its own key
+ * handlers (to avoid bringing up the native on-screen keyboard). Before
+ * upstream removed jQuery, `.val()` did this for any element; upstream now
+ * only reads `value` from an HTMLTextAreaElement, which silently drops typing
+ * into such elements. These helpers restore the jQuery behavior.
+ */
+function getTextareaValue(el: HTMLElement): string {
+  const value = (el as { value?: unknown }).value;
+  return typeof value === 'string' ? value : '';
+}
+function setTextareaValue(el: HTMLElement, text: string) {
+  (el as { value?: unknown }).value = text;
+}
+function selectTextareaContents(el: HTMLElement) {
+  const select = (el as { select?: unknown }).select;
+  if (typeof select === 'function') select.call(el);
+}
+
 /** Poller that fires once every tick. */
 class EveryTick<Args extends unknown[] = []> {
   private timeoutId: number;
@@ -166,7 +187,7 @@ var saneKeyboardEvents = (function () {
         // likely that we don't really care if the selection
         // fails to happen in this case. Why would the textarea
         // be hidden? And who would even be able to tell?
-        if (textarea instanceof HTMLTextAreaElement) textarea.select();
+        selectTextareaContents(textarea);
       } catch (e) {}
     }
 
@@ -178,7 +199,7 @@ var saneKeyboardEvents = (function () {
       everyTick.trigger();
       everyTick.clearListener();
 
-      if (textarea instanceof HTMLTextAreaElement) textarea.value = text;
+      setTextareaValue(textarea, text);
       if (text) guardedTextareaSelect();
       shouldBeSelected = !!text;
     }
@@ -191,8 +212,8 @@ var saneKeyboardEvents = (function () {
     // HTMLTextareaElement::selection{Start,End}.
     function hasSelection() {
       if (!('selectionStart' in textarea)) return false;
-      if (!(textarea instanceof HTMLTextAreaElement)) return false;
-      return textarea.selectionStart !== textarea.selectionEnd;
+      const { selectionStart, selectionEnd } = textarea as HTMLTextAreaElement;
+      return selectionStart !== selectionEnd;
     }
 
     function handleKey() {
@@ -284,10 +305,9 @@ var saneKeyboardEvents = (function () {
       // b1318e5349160b665003e36d4eedd64101ceacd8
       if (hasSelection()) return;
 
-      if (!(textarea instanceof HTMLTextAreaElement)) return;
-      var text = textarea.value;
+      var text = getTextareaValue(textarea);
       if (text.length === 1) {
-        textarea.value = '';
+        setTextareaValue(textarea, '');
         if (controller.options && controller.options.overrideTypedText) {
           controller.options.overrideTypedText(text);
         } else {
@@ -299,8 +319,7 @@ var saneKeyboardEvents = (function () {
     }
 
     function maybeReselect() {
-      if (!(textarea instanceof HTMLTextAreaElement)) return;
-      if (textarea.value.length > 1) {
+      if (getTextareaValue(textarea).length > 1) {
         guardedTextareaSelect();
       }
     }
@@ -309,7 +328,7 @@ var saneKeyboardEvents = (function () {
       keydown = null;
       keypress = null;
       everyTick.clearListener();
-      if (textarea instanceof HTMLTextAreaElement) textarea.value = '';
+      setTextareaValue(textarea, '');
     }
 
     function onPaste(e: Event) {
@@ -333,9 +352,8 @@ var saneKeyboardEvents = (function () {
       }
 
       everyTick.listen(function pastedText() {
-        if (!(textarea instanceof HTMLTextAreaElement)) return;
-        var text = textarea.value;
-        textarea.value = '';
+        var text = getTextareaValue(textarea);
+        setTextareaValue(textarea, '');
         if (text) controller.paste(text);
       });
     }
