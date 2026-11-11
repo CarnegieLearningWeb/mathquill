@@ -82,9 +82,8 @@ class Controller extends Controller_scrollHoriz {
 
     ctrlr.selectFn = function (text: string) {
       const textarea = ctrlr.getTextareaOrThrow();
-      if (!(textarea instanceof HTMLTextAreaElement)) return;
-      textarea.value = text;
-      if (text) textarea.select();
+      setTextareaValue(textarea, text);
+      if (text) selectTextareaContents(textarea);
     };
   }
 
@@ -117,9 +116,8 @@ class Controller extends Controller_scrollHoriz {
     const textareaSpan = ctrlr.getTextareaSpanOrThrow();
 
     this.selectFn = function (text: string) {
-      if (!(textarea instanceof HTMLTextAreaElement)) return;
-      textarea.value = text;
-      if (text) textarea.select();
+      setTextareaValue(textarea, text);
+      if (text) selectTextareaContents(textarea);
     };
     domFrag(textareaSpan).remove();
 
